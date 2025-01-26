@@ -12,7 +12,7 @@ Mode 3: meaning_r
 import random
 import pandas as pd
 
-from load import load_radicals
+from load import load_radicals, load_radicals_complete
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QFrame, QHBoxLayout, QMenu, QDialog, QListWidget
 from PyQt5.QtGui import QFont
@@ -21,13 +21,14 @@ from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtCore import QUrl
 
+
 # load gamemodes
 class Screen(QWidget):
     def __init__(self, parent=None, mode='meaning'):
         super().__init__(parent)
-        self.radicals = load_radicals()
-        self.radicals = self.radicals[:27]
-        print("WARNING: Loaded radicals 0-26")
+        self.radicals = load_radicals_complete()
+        # self.radicals = self.radicals[:27]
+        # print("WARNING: Loaded radicals 0-26")
         self.initUI(mode=mode)
 
 
@@ -36,8 +37,19 @@ class Screen(QWidget):
         self.mode = mode
         if mode == 'meaning':
             self.game_function = self.show_new_radical_and_choices
+            self.choice_count = 4
+            self.choices.setFixedHeight(150)
+            self.score.setFont(QFont('Arial', 20))
+            self.score.setFixedHeight(100)
+            self.choice_font_size = 20
+
         elif mode == 'find hanzi':
             self.game_function = self.show_new_meaning_and_choices
+            self.choice_count = 8
+            self.choices.setFixedHeight(400)
+            self.score.setFont(QFont('Arial', 25))
+            self.score.setFixedHeight(100)
+            self.choice_font_size = 30
         else:
             raise ValueError(f'Unknown mode {mode}')
         
@@ -56,20 +68,15 @@ class Screen(QWidget):
         self.input_pinyin.setAlignment(Qt.AlignCenter)
 
         self.choices = QListWidget()
-        
-        self.choices.setFixedHeight(200)
-        self.choice_count = 4
         self.choices.itemClicked.connect(self.check_choice)
 
         # score is a text that allows newlines
         self.score = QLabel()
-        self.score.setFont(QFont('Arial', 20))
         self.score.setWordWrap(True)
         self.score_correct = 0
         self.score_wrong = 0
         self.score.setFixedHeight(70)
         self.score.setAlignment(Qt.AlignTop)
-        
         self.score.setText('0 correct, 0 wrong')
         self.answer = ''
         
@@ -78,7 +85,6 @@ class Screen(QWidget):
         spacer.setFixedHeight(20)
 
         self.audio_player = QMediaPlayer()
-
         self.play_audio_button = QPushButton('Play audio')
         self.play_audio_button.clicked.connect(self.play_current_audio)
 
@@ -131,11 +137,18 @@ class Screen(QWidget):
             # check if fake is already in choices, also prevents using real answer as fake
             if fake not in choices:
                 choices.append(fake)
-        
+
         random.shuffle(choices)
         for choice in choices:
             self.choices.addItem(choice)
-        
+            
+        # for choices, align to center
+        for i in range(self.choices.count()):
+            item = self.choices.item(i)
+            item.setTextAlignment(Qt.AlignCenter)
+            item.setFont(QFont('Arial', self.choice_font_size))
+           
+ 
         # lastly, play the audio
         mp3_p = radical['Audio'].values[0]
         mp3_p = str(mp3_p.resolve())
@@ -173,7 +186,8 @@ class Screen(QWidget):
         for i in range(self.choices.count()):
             item = self.choices.item(i)
             item.setTextAlignment(Qt.AlignCenter)
-            item.setFont(QFont('Arial', 30))
+            item.setFont(QFont('Arial', self.choice_font_size))
+
         # Play the audio
         mp3_p = radical['Audio'].values[0]
         mp3_p = str(mp3_p.resolve())
@@ -214,6 +228,7 @@ class Screen(QWidget):
 if __name__ == '__main__':
     app = QApplication([])
     # init with mode 'show hanzi'
-    screen = Screen(mode='find hanzi')
+    # screen = Screen(mode='find hanzi')
+    screen = Screen(mode='meaning')
     screen.show()
     app.exec_()

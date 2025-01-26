@@ -42,6 +42,22 @@ def load_radicals():
     return radicals
 
 
+def load_radicals_complete():
+    script_dir = pathlib.Path(__file__).parent.absolute()
+    radicals = pd.read_csv(script_dir / 'data/radicals_complete.tsv', sep='\t')
+    # fill nan with ''
+    radicals = radicals.fillna('')
+    # variant can be a list
+    radicals['Variant'] = radicals['Variant'].str.split(',')
+    radicals = radicals.rename(columns={'SC': 'Radical'})
+    radicals['Pinyin'] = radicals['Pinyin'].apply(fix_pinyin)
+    # add full file paths
+    radicals['Audio'] = radicals['Pinyin'].apply(get_path_to_pinyin_sound)
+
+    return radicals
+ 
+
+
 def get_path_to_pinyin_sound(sound : str):
     """ Get the path to the pinyin sound file 
     
@@ -60,3 +76,4 @@ def get_path_to_pinyin_sound(sound : str):
 
 if __name__ == '__main__':
     print(load_radicals().head())
+    print(load_radicals_complete().head())
